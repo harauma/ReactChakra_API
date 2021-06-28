@@ -1,0 +1,50 @@
+version: '3'
+services:
+  go:
+    build:
+      context: .
+      dockerfile: ./docker/go/Dockerfile
+    container_name: go_container
+    ports:
+      - 8000:8000
+    tty: true
+    volumes:
+      - ./api:/app
+    command: realize start --run
+    working_dir: /app
+  mysql:
+    build:
+      context: .
+      dockerfile: ./docker/mysql/Dockerfile
+    container_name: mysql_container
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test_db
+      MYSQL_USER: sisupiyo
+      MYSQL_PASSWORD: sisupiyo
+      TZ: 'Asia/Tokyo'
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - ./docker/mysql/initdb.d:/docker-entrypoint-initdb.d
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d
+      - ./docker/mysql/mysql_data:/var/lib/mysql
+    ports:
+    - 3306:3306
+    tty: true
+    user: "1000:50"
+    links:
+      - go
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=mysql
+      - PMA_USER=sisupiyo
+      - PMA_PASSWORD=sisupiyo
+    links:
+      - mysql
+    ports:
+      - 1234:80
+    volumes:
+      - /sessions
